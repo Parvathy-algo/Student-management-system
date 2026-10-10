@@ -422,6 +422,9 @@ function App() {
       </aside>
 
       <main className="main-content">
+        {/* ==========================================
+            ADMIN PORTAL PANELS
+           ========================================== */}
         {userRole === 'admin' && (
           <div>
             {adminTab === 'dashboard' && (
@@ -616,8 +619,6 @@ function App() {
             {adminTab === 'marks' && (
               <div className="dashboard-section">
                 <h3 className="section-title">🎯 Examination Record Entry Desk</h3>
-                
-                {/* Dynamic Marksheet Submission Form */}
                 <form onSubmit={handleMarksSubmit} className="portal-data-form" style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: '24px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
                     <div>
@@ -649,7 +650,6 @@ function App() {
                   <button type="submit" className="btn-primary" style={{ cursor: 'pointer' }}>Register Grade Report</button>
                 </form>
 
-                {/* Live Grade Ledger Summary Table */}
                 <h4 style={{ margin: '24px 0 12px 0', color: '#334155' }}>📋 Grade Ledger Book Registry</h4>
                 <table className="data-table">
                   <thead>
@@ -691,6 +691,141 @@ function App() {
                         );
                       })
                     )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ==========================================
+            STUDENT PORTAL PANELS 
+           ========================================== */}
+        {userRole === 'student' && activeStudentSession && (
+          <div>
+            {studentTab === 'dashboard' && (
+              <div>
+                <h2 className="page-title">Welcome Back, {activeStudentSession.name}! 👋</h2>
+                <p style={{ color: '#64748b', marginBottom: '24px' }}>Here is your real-time performance summary and workspace matrix overview.</p>
+                
+                <div className="card-grid">
+                  <div className="stat-card blue">
+                    <span className="card-label">Current Academic CGPA</span>
+                    <span className="card-value blue-text">{activeStudentSession.cgpa || 'N/A'}</span>
+                  </div>
+                  <div className="stat-card green">
+                    <span className="card-label">Overall Attendance Matrix</span>
+                    <span className="card-value green-text">{calculateStudentAttendance(activeStudentSession.id)}%</span>
+                  </div>
+                </div>
+
+                <div className="dashboard-section" style={{ marginTop: '30px' }}>
+                  <h3 className="section-title">📢 Campus Bulletins & Announcements</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {announcements.map(ann => (
+                      <div key={ann.id} style={{ padding: '16px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', borderLeft: '4px solid #3b82f6' }}>
+                        <h4 style={{ margin: '0 0 6px 0', color: '#1e293b' }}>{ann.title}</h4>
+                        <p style={{ margin: 0, color: '#475569', fontSize: '13px' }}>{ann.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {studentTab === 'profile' && (
+              <div className="dashboard-section">
+                <h3 className="section-title">👤 Official Student Profile Identity Card</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', background: '#f8fafc', padding: '24px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <div><span style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>FULL NAME</span><strong style={{ fontSize: '16px', color: '#0f172a' }}>{activeStudentSession.name}</strong></div>
+                  <div><span style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>ROLL ID / REGISTER NUMBER</span><code style={{ fontSize: '14px' }}>{activeStudentSession.rollNumber}</code></div>
+                  <div><span style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>DEPARTMENT UNDERTRACK</span><strong>{activeStudentSession.department} Department</strong></div>
+                  <div><span style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>CURRENT SEMESTER TERM</span><strong>Semester {activeStudentSession.semester}</strong></div>
+                  <div><span style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>EMAIL SUBSCRIPTION ADDRESS</span><span>{activeStudentSession.email}</span></div>
+                  <div><span style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>MOBILE COMMUNICATIONS</span><span>{activeStudentSession.phone}</span></div>
+                </div>
+              </div>
+            )}
+
+            {studentTab === 'courses' && (
+              <div className="dashboard-section">
+                <h3 className="section-title">📚 Registered Curricular Tracks</h3>
+                <table className="data-table">
+                  <thead>
+                    <tr><th>Course Code</th><th>Subject Name Module</th><th>Allotted Credits</th><th>Assigned Instructor</th></tr>
+                  </thead>
+                  <tbody>
+                    {courses.map(c => (
+                      <tr key={c.id}>
+                        <td><code>{c.code}</code></td>
+                        <td><b>{c.name}</b></td>
+                        <td>{c.credits} Credits</td>
+                        <td>{c.faculty}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {studentTab === 'attendance' && (
+              <div className="dashboard-section">
+                <h3 className="section-title">📅 Academic Attendance Ledger Report</h3>
+                <table className="data-table">
+                  <thead>
+                    <tr><th>Subject Track</th><th>Attended Sessions</th><th>Total Classes Conducted</th><th>Percentage Rate</th></tr>
+                  </thead>
+                  <tbody>
+                    {courses.map(c => {
+                      const log = attendance.find(a => a.studentId === activeStudentSession.id && a.course === c.name);
+                      const attended = log ? log.attendedClasses : 0;
+                      const conducted = globalClassesConducted[c.name] || 0;
+                      const percentage = conducted > 0 ? Math.round((attended / conducted) * 100) : 0;
+                      
+                      return (
+                        <tr key={c.id}>
+                          <td><b>{c.name}</b></td>
+                          <td>{attended} classes</td>
+                          <td>{conducted} classes</td>
+                          <td>
+                            <span style={{ fontWeight: 'bold', color: percentage >= 75 ? '#16a34a' : '#dc2626' }}>
+                              {percentage}% {percentage < 75 ? '⚠️ (Shortage)' : '✅'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {studentTab === 'grades' && (
+              <div className="dashboard-section">
+                <h3 className="section-title">📝 Official Examination Marksheets</h3>
+                <table className="data-table">
+                  <thead>
+                    <tr><th>Subject Module</th><th>Internals (50)</th><th>Assignment (10)</th><th>End Sem (40)</th><th>Aggregate Grade (100)</th></tr>
+                  </thead>
+                  <tbody>
+                    {courses.map(c => {
+                      const scoreRecord = marks.find(m => m.studentId === activeStudentSession.id && m.course === c.name);
+                      return (
+                        <tr key={c.id}>
+                          <td><b>{c.name}</b></td>
+                          <td>{scoreRecord ? scoreRecord.internal : '-'}</td>
+                          <td>{scoreRecord ? scoreRecord.assignment : '-'}</td>
+                          <td>{scoreRecord ? scoreRecord.exam : '-'}</td>
+                          <td>
+                            {scoreRecord ? (
+                              <strong style={{ color: scoreRecord.total >= 40 ? '#16a34a' : '#dc2626' }}>
+                                {scoreRecord.total} / 100 ({scoreRecord.total >= 40 ? 'PASSED' : 'FAILED'})
+                              </strong>
+                            ) : <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Not Processed Yet</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
